@@ -4,3 +4,7 @@ dist/*
 *.egg-info/*
 docs/build/*
 *__pycache__*
+data/
+tools/
+venvs/
+shared_models/
