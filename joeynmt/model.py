@@ -36,7 +36,8 @@ class Model(nn.Module):
                  src_vocab: Vocabulary,
                  trg_vocab: Vocabulary,
                  factor_embed: Optional[Embeddings],
-                 factor_vocab: Optional[Vocabulary]) -> None:
+                 factor_vocab: Optional[Vocabulary],
+                 option: Optional[str] = None) -> None:
         """
         Create a new encoder-decoder model
 
@@ -44,10 +45,11 @@ class Model(nn.Module):
         :param decoder: decoder
         :param src_embed: source embedding
         :param trg_embed: target embedding
-        :param factor_embed: factor embedding
         :param src_vocab: source vocabulary
         :param trg_vocab: target vocabulary
+        :param factor_embed: factor embedding
         :param factor_vocab: factor vocabulary
+        :param option: factor combine option
         """
         super(Model, self).__init__()
 
@@ -62,6 +64,7 @@ class Model(nn.Module):
         self.bos_index = self.trg_vocab.stoi[BOS_TOKEN]
         self.pad_index = self.trg_vocab.stoi[PAD_TOKEN]
         self.eos_index = self.trg_vocab.stoi[EOS_TOKEN]
+        self.option = option
 
     # pylint: disable=arguments-differ
     def forward(self, src: Tensor, trg_input: Tensor, src_mask: Tensor,
@@ -86,12 +89,19 @@ class Model(nn.Module):
             elif cfg["encoder"]["factor_combine"] == "concatenate":
                 src= torch.cat(src, factors)
         '''
-            
-        encoder_output, encoder_hidden = self.encode(src=src,
-                                                     src_length=src_lengths,
-                                                     src_mask=src_mask,
-                                                     factors=factors,
-                                                     factor_lengths=factor_lengths)
+        if self.option == "add":
+            pass
+        elif self.option == "concatenate":
+            encoder_output, encoder_hidden = self.encode(src=src,
+                                                         src_length=src_lengths,
+                                                         src_mask=src_mask,
+                                                         factors=factors,
+                                                         factor_lengths=factor_lengths,
+                                                         option = self.option)
+        else:
+            encoder_output, encoder_hidden = self.encode(src=src,
+                                                         src_length=src_lengths,
+                                                         src_mask=src_mask)
         unroll_steps = trg_input.size(1)
         return self.decode(encoder_output=encoder_output,
                            encoder_hidden=encoder_hidden,
@@ -100,7 +110,8 @@ class Model(nn.Module):
                            trg_mask=trg_mask)
 
     def encode(self, src: Tensor, src_length: Tensor, src_mask: Tensor, 
-                factors: Optional[Tensor], factor_lengths: Optional[Tensor]) \
+                factors: Optional[Tensor], factor_lengths: Optional[Tensor],
+                option: Optional[str] = None) \
         -> (Tensor, Tensor):
         """
         Encodes the source sentence.
@@ -111,7 +122,12 @@ class Model(nn.Module):
         :return: encoder outputs (output, hidden_concat)
         """
             
-        return self.encoder(cat((self.src_embed(src), self.factor_embed(factors)), 2), src_length, src_mask)
+        if self.option == "add":
+            pass
+        elif self.option == "concatenate":
+            return self.encoder(cat((self.src_embed(src), self.factor_embed(factors)), 2), src_length, src_mask)
+        else:
+            return self.encoder(self.src_embed(src), src_length, src_mask)
 
     def decode(self, encoder_output: Tensor, encoder_hidden: Tensor,
                src_mask: Tensor, trg_input: Tensor,
@@ -251,7 +267,14 @@ def build_model(cfg: dict = None,
         factor_padding_idx = factor_vocab.stoi[PAD_TOKEN]
     else: 
         factor_padding_idx = None
-            
+        
+    #save factor combine option
+    if factor_vocab is not None:
+            if cfg["encoder"]["factor_combine"] == "add":
+                option = "add"
+            elif cfg["encoder"]["factor_combine"] == "concatenate":
+                option = "concatenate"
+    
     src_embed = Embeddings(
         **cfg["encoder"]["embeddings"], vocab_size=len(src_vocab),
         padding_idx=src_padding_idx)
@@ -260,7 +283,7 @@ def build_model(cfg: dict = None,
         factor_embed = Embeddings(
             **cfg["encoder"]["factor_embeddings"], vocab_size=len(factor_vocab),
             padding_idx=factor_padding_idx)
-        if cfg["encoder"]["factor_combine"] == "add":
+        if option == "add":
             if factor_embed.embedding_dim != src_embed.embedding_dim:
                 raise ConfigurationError(
                     "Factor&source embeddings must have same dimension")
@@ -294,11 +317,11 @@ def build_model(cfg: dict = None,
         
     else:
         if factor_vocab is not None:
-            if cfg["encoder"]["factor_combine"] == "add":
+            if option == "add":
                 encoder = RecurrentEncoder(**cfg["encoder"],
                                            emb_size=src_embed.embedding_dim,
                                            emb_dropout=enc_emb_dropout)
-            elif cfg["encoder"]["factor_combine"] == "concatenate":
+            elif option == "concatenate":
                 encoder = RecurrentEncoder(**cfg["encoder"],
                                            emb_size=src_embed.embedding_dim\
                                                     +factor_embed.embedding_dim,
@@ -322,11 +345,17 @@ def build_model(cfg: dict = None,
         decoder = RecurrentDecoder(
             **cfg["decoder"], encoder=encoder, vocab_size=len(trg_vocab),
             emb_size=trg_embed.embedding_dim, emb_dropout=dec_emb_dropout)
-
-    model = Model(encoder=encoder, decoder=decoder,
-                  src_embed=src_embed, trg_embed=trg_embed,
-                  src_vocab=src_vocab, trg_vocab=trg_vocab,
-                  factor_embed=factor_embed, factor_vocab=factor_vocab)
+    
+    if factor_vocab is not None:
+        model = Model(encoder=encoder, decoder=decoder,
+                      src_embed=src_embed, trg_embed=trg_embed,
+                      src_vocab=src_vocab, trg_vocab=trg_vocab,
+                      factor_embed=factor_embed, factor_vocab=factor_vocab,
+                      option=option)
+    else:
+        model = Model(encoder=encoder, decoder=decoder,
+                      src_embed=src_embed, trg_embed=trg_embed,
+                      src_vocab=src_vocab, trg_vocab=trg_vocab)
 
     # tie softmax layer with trg embeddings
     if cfg.get("tied_softmax", False):
