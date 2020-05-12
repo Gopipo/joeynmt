@@ -90,7 +90,12 @@ class Model(nn.Module):
                 src= torch.cat(src, factors)
         '''
         if self.option == "add":
-            pass
+            encoder_output, encoder_hidden = self.encode(src=src,
+                                                         src_length=src_lengths,
+                                                         src_mask=src_mask,
+                                                         factors=factors,
+                                                         factor_lengths=factor_lengths,
+                                                         option = self.option)
         elif self.option == "concatenate":
             encoder_output, encoder_hidden = self.encode(src=src,
                                                          src_length=src_lengths,
@@ -123,7 +128,7 @@ class Model(nn.Module):
         """
             
         if self.option == "add":
-            pass
+            return self.encoder(add(self.src_embed(src), self.factor_embed(factors)), src_length, src_mask)
         elif self.option == "concatenate":
             return self.encoder(cat((self.src_embed(src), self.factor_embed(factors)), 2), src_length, src_mask)
         else:
