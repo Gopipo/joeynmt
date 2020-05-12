@@ -45,6 +45,16 @@ Added optional factor vocabulary.
     Added embedding dimension check.
     
     Added encoder variants for adding and concatenating of factor & source embeddings
+    
+#Findings
+
+Baseline:    Bleu = 8.6 | BP 0.838
+Concatenate: Bleu = 0.7 | BP 1.0
+Add :        Bleu = 0.9 | BP 1.0
+        
+Interestingly, the factored models give longer translations, resulting in no brevity penalty.
+From these initial results, it seems that the required training time is increased massively.
+This would need to be re-run on more epochs.
         
 # Requirements
 
@@ -74,8 +84,7 @@ Download prepared data for training, vali-dation and testing:
  
     ./scripts/download_preprocessed_data.sh
     
-There are already pretrained models.
-If you wish to train the models, remove the corresponding files out of the directory ./models/
+Training the models:
 Before  you  run  the  scripts to train the models:  if  you  have  a  GPU,  edit  the JoeyNMT config to enable usecuda.
 If you have a different number of cores on CPU, change the scripts: train_add.sh & train_concatenate.sh
 
