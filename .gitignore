@@ -8,3 +8,5 @@ data/
 tools/
 venvs/
 shared_models/
+models/
+translations/
