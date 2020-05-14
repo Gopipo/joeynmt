@@ -1,7 +1,7 @@
 # Factored Machine Translation in Joeynmt
 
 Based on: https://github.com/joeynmt/joeynmt
-Factor implementation (except model.py): https://github.com/bricksdont/joeynmt
+Factor implementation (except model.py): https://github.com/bricksdont/joeynmt/tree/factors_incomplete
 
 # Changes made
 
@@ -23,8 +23,7 @@ rnn_wmt16_factors_concatenate_deen.yaml & rnn_wmt16_factors_add_deen.yaml
             embeddings:
                 embedding_dim : <- set
                 
-./joeynmt/
-model.py 
+./joeynmt/model.py 
 
     class Model
         
@@ -38,6 +37,8 @@ model.py
         Added optional inclusion of factors in loss calculation in get_loss_for_batch().
         
         Added optional inclusion of factors in run_batch().
+        
+        Added "option" attribute for easier access in functions.
         
 build_model() 
 Added optional factor vocabulary.
@@ -57,8 +58,8 @@ Concatenate: Bleu = 0.7 | BP 1.0
 Add :        Bleu = 0.9 | BP 1.0
         
 Interestingly, the factored models give longer translations, resulting in no brevity penalty.
-From these initial results, it seems that the required training time is increased massively.
-This would need to be re-run on more epochs.
+This may be connected to the early training stage achieved after only 2 epochs however.
+From these initial results, it seems that the required training time is increased massively by including factors, as more epochs seem to be required.
         
 # Requirements
 
