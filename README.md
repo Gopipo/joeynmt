@@ -6,7 +6,9 @@ Factor implementation (except model.py): https://github.com/bricksdont/joeynmt
 # Changes made
 
 ./configs/
-In rnn_wmt16_factors_concatenate_deen.yaml & rnn_wmt16_factors_add_deen.yaml
+
+rnn_wmt16_factors_concatenate_deen.yaml & rnn_wmt16_factors_add_deen.yaml
+
     training: 
         model_dir: <- set to respective directory
     
@@ -46,10 +48,12 @@ Added optional factor vocabulary.
     
     Added encoder variants for adding and concatenating of factor & source embeddings
     
-#Findings
+# Findings
 
 Baseline:    Bleu = 8.6 | BP 0.838
+
 Concatenate: Bleu = 0.7 | BP 1.0
+
 Add :        Bleu = 0.9 | BP 1.0
         
 Interestingly, the factored models give longer translations, resulting in no brevity penalty.
