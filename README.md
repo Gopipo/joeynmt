@@ -73,7 +73,7 @@ From these initial results, it seems that the required training time is increase
 
 Clone this repository in the desired place.
 
-    git clone https://github.com/[yourusername]/joeynmt
+    git clone https://github.com/Gopipo/joeynmt
     
 Create a new virtualenv that uses Python 3. Please make sure to run this command outside of any virtual Python environment:
 
